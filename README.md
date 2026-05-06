@@ -1,160 +1,159 @@
-# Piper TTS Web Interface
+# Piper TTS Web Interface — Patch Fork
 
-See it live!: [BasicTTS.com](https://basictts.com)
+This repository is a practical patch fork of an older Piper TTS web interface created by Patrick Metzger. It was created to fix the broken upstream project by bypassing the firebase issue that blocked audio outputs from being successfully saved to an accessible location.  In addition to restoring core functionality, we have added a small set of quality-of-life improvements without rebuilding the application from scratch.
 
-This is a simple web interface for [Piper Text-to-Speech](https://github.com/OHF-Voice/piper1-gpl) that provides a user-friendly way to convert text to speech using various voice models.
+Part of the upstream project included a live demo of the application, which as of this writing is still fully functional and can be seen at [BasicTTS.com](https://basictts.com)
 
-This repo was almost entirely vibe-coded in [Cursor](https://www.cursor.com/).
+
+Please note that this is **not** a clean-room rewrite, all existing firebase codepaths were left in place, but bypassed. Pull requests to take this from Patrick’s vibe-coded source, through our patch and enhancement, to a more solidly engineered status are welcome, but as this is a side project and maintenance is expected to be casual, forking is encouraged if anyone wants to build this out into a bigger project. As it stands, this was the best baseline for a very specific use case, namely fully offline, cpu only, local ai, test-to-speech, using piper as the runtime engine, but including a useable webui for browser access. Most tooling is optimized for CLI use, or is based on multiple runtime engines (OpenTTS) or is based on heavier workflows (CoquiTTS, TTS-webui, etc)
+
+
+## High-level changes in this fork
+
+Based on the patch work done in this fork, the main changes include:
+
+- Bypasses firebase coee paths that prevented offline Piper usage.
+- Improved Docker/runtime setup for repeatable deployment.
+- Added ffmpeg-based MP3 generation alongside WAV handling.
+- Improved generated-audio file handling and output listing.
+- Updated the UI workflow around generated synthesis events and output actions.
+- Added practical fixes around local models, outputs, and runtime startup behavior.
+
+This is still fundamentally the original project architecture, just repaired and extended in targeted places rather than rewritten from scratch.
+
+## Operational notes
+
+This fork is designed around a simple local-file workflow:
+
+- Voice models live in the `models/` directory as `.onnx` files with matching `.json` metadata files.
+- Generated audio is written to `outputs/`.
+- Runtime startup is handled by `start.sh`.
+- Docker deployment includes the system packages needed for Piper and audio conversion.
+- ffmpeg is used so generated audio can be made available in MP3 form in addition to WAV.
+
+In other words, this fork is meant to be easy to reason about: local models in, generated files out, and minimal moving parts in between.
 
 ## Prerequisites
 
-1. Python 3.8 or higher
-2. espeak-ng (required for Piper)
-3. Git LFS (for managing voice model files)
-4. Voice models in ONNX + JSON format
+1. Python 3.8+
+2. `espeak-ng`
+3. `ffmpeg`
+4. Piper installed in the Python environment
+5. Voice models in ONNX + JSON format
 
 ## Installation
 
-### Local Development
+### Local development
+Please note, as we have focused on running this in Docker, we have not tested all installation modes on all systems. The following instructions were taken from the original upstream project. 
 
-1. Install system dependencies:
+1. Install system dependencies.
 
-   **For macOS:**
-   ```bash
-   # Install espeak-ng, git-lfs and build dependencies
-   brew install espeak-ng cmake ninja git-lfs
-   
-   # Initialize Git LFS
-   git lfs install
-   
-   # Install Piper (much simpler now!)
-   pip install piper-tts
-   ```
+**Linux (Debian/Ubuntu):**
+```bash
+sudo apt-get update
+sudo apt-get install espeak-ng espeak-ng-data ffmpeg git-lfs
+git lfs install
+```
 
-   **For Linux:**
-   ```bash
-   # Install espeak-ng and git-lfs
-   sudo apt-get update
-   sudo apt-get install espeak-ng git-lfs
-   
-   # Initialize Git LFS
-   git lfs install
-   
-   # Install Piper (much simpler now!)
-   pip install piper-tts
-   ```
+**macOS:**
+```bash
+brew install espeak-ng ffmpeg git-lfs
+git lfs install
+```
 
-   **For Windows:**
-   ```bash
-   # Install Git LFS using the installer from https://git-lfs.com
-   # Or using Chocolatey:
-   choco install git-lfs
-   
-   # Initialize Git LFS
-   git lfs install
-   
-   # Install Piper
-   pip install piper-tts
-   ```
+2. Install Piper:
+```bash
+pip install piper-tts
+```
 
-2. Install the web interface package:
-   ```bash
-   pip install -e .
-   ```
+3. Install this project:
+```bash
+pip install -e .
+```
 
-3. Download voice files from [Piper Samples](https://rhasspy.github.io/piper-samples/) (you can listen to samples and download the ones you like)
-   - Place the downloaded .onnx files and their corresponding .json files in the `models` directory
+4. Place voice model files in `models/`:
+- `voice-name.onnx`
+- `voice-name.onnx.json`
 
-### Production Deployment
+### Docker
 
-The application is designed to be deployed using Docker and is configured for deployment on servers running Linux 24.04 or compatible distributions.
+Build:
+```bash
+docker build -t piper-tts-web .
+```
 
-1. Build the Docker image:
-   ```bash
-   docker build -t piper-tts-web .
-   ```
+Run:
+```bash
+docker run -p 8000:8000 \
+  -v $(pwd)/models:/app/models \
+  -v $(pwd)/outputs:/app/outputs \
+  piper-tts-web
+```
 
-2. Run the container:
-   ```bash
-   docker run -p 8000:8000 -v $(pwd)/models:/app/models piper-tts-web
-   ```
-
-3. For production deployment:
-   - The application is configured to work with Linux-based infrastructure
-   - Use the provided Dockerfile for consistent deployment
-   - Ensure proper volume mounting for voice models
-   - Configure appropriate environment variables for production settings
+If you are using Docker in production, make sure model and output directories are mounted or otherwise persisted appropriately.
 
 ## Usage
 
-1. Start the server (development mode):
-   ```bash
-   python server.py
-   ```
-   The server will start on `http://localhost:8000`
+1. Start the app:
+```bash
+python server.py
+```
 
-2. Open your web browser and navigate to `http://localhost:8000`
+Or use the provided startup script / Docker workflow.
 
-3. Select a voice from the dropdown menu
+2. Open the web interface in your browser.
+3. Select a voice.
+4. Enter text.
+5. Generate speech.
+6. the mp3 version will load into the player, and autoplay.
+7. The user can select other output files from the selection area below the player, and load them into the player on demand, they will autoplay.
+8. Download links are provided for each synth event, for both mp3 and wav formats, with file sizes listed in the event row.
 
-4. Enter the text you want to convert to speech
+This fork’s UI is centered around generated synthesis events and the output list rather than a one-shot transient playback model.
 
-5. Click "Convert to Speech" and wait for the audio to be generated
+## Project status
 
-6. Use the audio player to:
-   - Play/pause the generated audio
-   - Adjust the playback speed
-   - Download the audio file
-
-## Development
-
-### Setting up a development environment
-
-1. Create a virtual environment (optional but recommended):
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On macOS/Linux
-   ```
-
-2. Install development dependencies:
-   ```bash
-   pip install -e ".[dev]"
-   ```
-
-3. Run tests:
-   ```bash
-   pytest
-   ```
-
-4. Format code:
-   ```bash
-   black .
-   ```
+This repository should be considered a **best-effort patch fork**, and is essentially feature complete according to our vision and use case. 
 
 ## Troubleshooting
 
-1. If you get a "piper command not found" error:
-   - Make sure espeak-ng is installed
-   - Verify that Piper is installed correctly
-   - Check that the package is in your Python path
-   - Try running `which piper` to verify the installation
-   - Make sure your PATH includes the directory where piper is installed
+### No voices appear
+- Confirm that `models/` contains `.onnx` files.
+- Confirm that each `.onnx` file has a matching `.onnx.json` file.
+- Check naming consistency.
 
-2. If no voices appear in the dropdown:
-   - Check that you have .onnx files in the `models` directory
-   - Make sure each .onnx file has a corresponding .json file
-   - Verify that the files are properly named (e.g., `en_US-amy-medium.onnx`)
+### Synthesis fails
+- Verify the selected model exists in `models/`.
+- Check application logs.
+- Confirm Piper is installed and callable in the runtime environment.
 
-3. If the conversion fails:
-   - Check the server logs for detailed error messages
-   - Verify that the selected voice model exists
-   - Make sure the text input is not empty
+### MP3 output fails
+- Make sure `ffmpeg` is installed and available in the container or host environment.
+- Test with:
+```bash
+ffmpeg -version
+```
 
-## Notes
+### Piper executable is not found
+- Confirm Piper is installed in the active Python environment.
+- Test with:
+```bash
+python3 -m piper --help
+```
+- Also check:
+```bash
+which piper
+```
 
-- The server expects voice model files to be in ONNX format
-- Temporary audio files are automatically cleaned up after processing
-- The web interface supports various playback speeds (0.25x to 2x)
-- All processing is done locally on your machine
-- Docker deployment is recommended for consistent environments 
-- Consider using [disco](https://disco.cloud/) for production deployments
+## Attribution
+
+This project is a fork of an earlier Piper TTS web interface and remains structurally derived from that original work. This fork exists to patch, restore, and modestly extend the original project rather than replace it with a brand-new implementation.
+
+## License
+
+This repository is a fork of https://github.com/prossm/basic-web-tts.
+
+The upstream project does not include a formal license.
+This repository is provided for educational and interoperability purposes.
+
+All modifications and additions made in this fork are released under the MIT License.
