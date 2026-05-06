@@ -2,7 +2,6 @@ import hashlib
 import json
 import logging
 import os
-import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -19,8 +18,6 @@ import firebase_admin
 from firebase_admin import credentials, firestore, auth, storage
 import base64
 from typing import Optional
-from datetime import datetime
-
 
 app = FastAPI()
 
@@ -55,13 +52,6 @@ app.mount("/static", StaticFiles(directory=PACKAGE_DIR / "static"), name="static
 # Models directory
 MODELS_DIR = PACKAGE_DIR / "models"
 logger.info(f"Models directory: {MODELS_DIR}")
-
-# Outputs directory for generated audio
-OUTPUTS_DIR = PACKAGE_DIR / "outputs"
-OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
-logger.info(f"Outputs directory: {OUTPUTS_DIR}")
-
-# Generated audio files are served by an explicit route below
 
 # Initialize Firebase Admin with service account from env var
 FIREBASE_SERVICE_ACCOUNT_JSON = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
@@ -383,9 +373,6 @@ class SynthesisRequest(BaseModel):
     text: str
     voice: str
 
-class DeleteFilesRequest(BaseModel):
-    filenames: list[str]
-
 
 def find_piper_executable():
     """Find the piper executable in common installation locations."""
@@ -426,52 +413,6 @@ def find_piper_executable():
         "or follow the instructions in the README.md file."
     )
 
-def find_ffmpeg_executable():
-    possible_paths = [
-        "ffmpeg",
-        "/usr/bin/ffmpeg",
-        "/usr/local/bin/ffmpeg",
-    ]
-
-    for path in possible_paths:
-        if path == "ffmpeg":
-            import shutil
-            ffmpeg_in_path = shutil.which("ffmpeg")
-            if ffmpeg_in_path:
-                return ffmpeg_in_path
-        else:
-            if os.path.isfile(path) and os.access(path, os.X_OK):
-                return path
-
-    raise FileNotFoundError("Could not find ffmpeg executable.")
-
-def safe_output_path(filename: str) -> Path:
-    safe_name = Path(filename).name
-    if safe_name != filename:
-        raise HTTPException(status_code=400, detail="Invalid filename")
-    return OUTPUTS_DIR / safe_name
-
-def slugify_for_filename(value: str, max_words: int = 6, max_length: int = 48) -> str:
-    words = value.strip().split()
-    preview = " ".join(words[:max_words]).lower()
-    preview = re.sub(r"[^\w\s-]", "", preview)
-    preview = re.sub(r"[-\s]+", "-", preview).strip("-_")
-    preview = preview[:max_length].strip("-_")
-    return preview or "speech"
-
-def stem_without_ext(filename: str) -> str:
-    if filename.endswith(".mp3"):
-        return filename[:-4]
-    if filename.endswith(".wav"):
-        return filename[:-4]
-    return filename
-
-@app.get("/outputs/{filename}")
-async def get_output_file(filename: str):
-    path = safe_output_path(filename)
-    if not path.exists():
-        raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(path)
 
 @app.get("/", response_class=HTMLResponse)
 async def get_index():
@@ -523,300 +464,92 @@ async def get_dashboard_html():
 
 @app.get("/voices")
 async def list_voices():
-    """List all available voices from local models directory."""
+    """List all available voices from Firebase Storage."""
     try:
-        logger.info(f"Listing voices from local models directory: {MODELS_DIR}")
+        logger.info("Listing voices from Firebase Storage...")
         voices = []
-
-        if not MODELS_DIR.exists():
-            logger.error(f"Models directory does not exist: {MODELS_DIR}")
-            raise HTTPException(status_code=500, detail="Models directory not found")
-
-        onnx_files = sorted(
-            [p for p in MODELS_DIR.glob("*.onnx") if not p.name.endswith(".onnx.json")]
-        )
-        logger.info(f"Found {len(onnx_files)} local .onnx files: {[p.name for p in onnx_files]}")
-
-        for model_path in onnx_files:
-            try:
-                base_name = model_path.stem
-                json_path = MODELS_DIR / f"{base_name}.onnx.json"
-
-                voice_info = {}
-                if json_path.exists():
-                    with open(json_path) as f:
+        if not bucket:
+            logger.error("Firebase Storage bucket not initialized.")
+            raise HTTPException(status_code=500, detail="Firebase Storage not available")
+        # List all .onnx files in the models/ folder in the bucket
+        blobs = bucket.list_blobs(prefix=FIREBASE_MODELS_PATH)
+        onnx_files = [blob.name for blob in blobs if blob.name.endswith('.onnx') and not blob.name.endswith('.onnx.json')]
+        logger.info(f"Found {len(onnx_files)} .onnx files in Firebase Storage: {onnx_files}")
+        for onnx_blob_name in onnx_files:
+            base_name = Path(onnx_blob_name).stem
+            json_blob_name = f"{FIREBASE_MODELS_PATH}{base_name}.onnx.json"
+            # Download the .onnx.json metadata file to a temp location
+            with tempfile.NamedTemporaryFile(suffix=".json", delete=True) as temp_json:
+                try:
+                    json_blob = bucket.blob(json_blob_name)
+                    if not json_blob.exists():
+                        logger.warning(f"No JSON file found for {onnx_blob_name}")
+                        continue
+                    json_blob.download_to_filename(temp_json.name)
+                    with open(temp_json.name) as f:
                         voice_info = json.load(f)
-                else:
-                    logger.warning(f"No JSON metadata found for {model_path.name}")
-
-                language_code = base_name.split("-")[0]
-                voice_data = {
-                    "name": base_name,
-                    "language": language_code,
-                    "description": voice_info.get("description", "No description available"),
-                }
-                voices.append(voice_data)
-                logger.info(f"Added local voice: {voice_data}")
-            except Exception as e:
-                logger.error(f"Error processing local voice {model_path.name}: {e}")
-
-        logger.info(f"Returning {len(voices)} voices from local models directory.")
+                    language_code = base_name.split("-")[0]
+                    voice_data = {
+                        "name": base_name,
+                        "language": language_code,
+                        "description": voice_info.get("description", "No description available"),
+                    }
+                    voices.append(voice_data)
+                    logger.info(f"Added voice: {voice_data}")
+                except Exception as e:
+                    logger.error(f"Error processing voice {onnx_blob_name}: {e}")
+        logger.info(f"Returning {len(voices)} voices from Firebase Storage.")
         return voices
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Error listing local voices: {e}", exc_info=True)
+        logger.error(f"Error listing voices from Firebase Storage: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-
-
-
-
-
-@app.get("/outputs-list")
-async def list_outputs():
-    grouped = {}
-
-    try:
-        paths = list(OUTPUTS_DIR.iterdir())
-    except Exception as e:
-        logger.error(f"Failed to list outputs directory {OUTPUTS_DIR}: {e}")
-        raise HTTPException(status_code=500, detail="Could not read outputs directory")
-
-    for path in paths:
-        if not path.is_file():
-            continue
-        if path.suffix.lower() not in {".wav", ".mp3"}:
-            continue
-
-        try:
-            stat = path.stat()
-        except Exception as e:
-            logger.warning(f"Failed to stat output file {path.name}: {e}")
-            continue
-
-        stem = stem_without_ext(path.name)
-
-        if stem not in grouped:
-            grouped[stem] = {
-                "name": stem,
-                "modified": int(stat.st_mtime),
-                "wav_url": None,
-                "mp3_url": None,
-                "wav_size": None,
-                "mp3_size": None,
-            }
-
-        grouped[stem]["modified"] = max(grouped[stem]["modified"], int(stat.st_mtime))
-
-        if path.suffix.lower() == ".wav":
-            grouped[stem]["wav_url"] = f"/outputs/{path.name}"
-            grouped[stem]["wav_size"] = stat.st_size
-        else:
-            grouped[stem]["mp3_url"] = f"/outputs/{path.name}"
-            grouped[stem]["mp3_size"] = stat.st_size
-
-    files = sorted(grouped.values(), key=lambda item: item["modified"], reverse=True)
-    return {"files": files}
-
-@app.delete("/outputs/{filename}")
-async def delete_output(filename: str):
-    stem = stem_without_ext(Path(filename).name)
-
-    deleted = []
-    errors = []
-
-    for ext in (".wav", ".mp3"):
-        try:
-            path = safe_output_path(stem + ext)
-            path.unlink()
-            deleted.append(path.name)
-        except FileNotFoundError:
-            pass
-        except HTTPException:
-            raise
-        except Exception as e:
-            errors.append(f"{stem + ext}: {e}")
-
-    if not deleted and not errors:
-        raise HTTPException(status_code=404, detail="File not found")
-
-    if errors:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "message": "Some files could not be deleted",
-                "deleted": deleted,
-                "errors": errors,
-            },
-        )
-
-    return {"status": "deleted", "files": deleted}
-
-@app.post("/outputs-delete")
-async def delete_outputs_bulk(payload: DeleteFilesRequest):
-    deleted = []
-    missing = []
-    errors = []
-
-    for filename in payload.filenames:
-        stem = stem_without_ext(Path(filename).name)
-        deleted_any = False
-        had_error = False
-
-        for ext in (".wav", ".mp3"):
-            try:
-                path = safe_output_path(stem + ext)
-                path.unlink()
-                deleted.append(path.name)
-                deleted_any = True
-            except FileNotFoundError:
-                pass
-            except HTTPException:
-                raise
-            except Exception as e:
-                had_error = True
-                errors.append(f"{stem + ext}: {e}")
-
-        if not deleted_any and not had_error:
-            missing.append(filename)
-
-    if errors:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "message": "Some files could not be deleted",
-                "deleted": deleted,
-                "missing": missing,
-                "errors": errors,
-            },
-        )
-
-    return {
-        "status": "ok",
-        "deleted": deleted,
-        "missing": missing,
-    }
-
-
-@app.delete("/outputs-delete-all")
-async def delete_all_outputs():
-    deleted = []
-    errors = []
-    found_any = False
-
-    try:
-        paths = list(OUTPUTS_DIR.iterdir())
-    except Exception as e:
-        logger.error(f"Failed to list outputs directory {OUTPUTS_DIR}: {e}")
-        raise HTTPException(status_code=500, detail="Could not read outputs directory")
-
-    for path in paths:
-        if not path.is_file():
-            continue
-        if path.suffix.lower() not in {".wav", ".mp3"}:
-            continue
-
-        found_any = True
-
-        try:
-            path.unlink()
-            deleted.append(path.name)
-        except FileNotFoundError:
-            pass
-        except Exception as e:
-            logger.warning(f"Failed to delete output file {path.name}: {e}")
-            errors.append(f"{path.name}: {e}")
-
-    if not found_any:
-        return {"status": "ok", "deleted": [], "message": "No output files found"}
-
-    if errors:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "message": "Some output files could not be deleted",
-                "deleted": deleted,
-                "errors": errors,
-            },
-        )
-
-    return {"status": "ok", "deleted": deleted}
-
-
-
 
 @app.post("/synthesize")
 async def synthesize_speech(request: SynthesisRequest, req: Request, authorization: Optional[str] = Header(None)):
-    """Synthesize speech from text using the specified local voice model."""
+    """Synthesize speech from text using the specified voice. Download model from Firebase Storage."""
     try:
-        logger.info(f"Synthesize: using local model for voice: {request.voice}")
-
-        model_path = MODELS_DIR / f"{request.voice}.onnx"
-        config_path = MODELS_DIR / f"{request.voice}.onnx.json"
-
-        if not model_path.exists():
-            logger.error(f"Local model file not found: {model_path}")
+        logger.info(f"Synthesize: Downloading model for voice: {request.voice}")
+        if not bucket:
+            raise HTTPException(status_code=500, detail="Firebase Storage not available")
+        # Download the .onnx model and .onnx.json metadata from Firebase Storage
+        onnx_blob_name = f"{FIREBASE_MODELS_PATH}{request.voice}.onnx"
+        json_blob_name = f"{FIREBASE_MODELS_PATH}{request.voice}.onnx.json"
+        onnx_blob = bucket.blob(onnx_blob_name)
+        json_blob = bucket.blob(json_blob_name)
+        if not onnx_blob.exists():
+            logger.error(f"Model file not found in Firebase Storage: {onnx_blob_name}")
             raise HTTPException(status_code=404, detail=f"Voice {request.voice} not found")
-
-        text_hash = hashlib.md5(request.text.encode()).hexdigest()[:8]
-        timestamp_prefix = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
-        safe_voice = slugify_for_filename(request.voice, max_words=20, max_length=40)
-        text_preview = slugify_for_filename(request.text, max_words=6, max_length=48)
-
-        stem = f"{timestamp_prefix}_{safe_voice}_{text_preview}_{text_hash}"
-        wav_filename = f"{stem}.wav"
-        mp3_filename = f"{stem}.mp3"
-
-        temp_file = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
-        temp_file.close()
-        output_file = Path(temp_file.name)
-
-        piper_path = find_piper_executable()
-        logger.info(f"Using piper executable: {piper_path}")
-        logger.info(f"Using local model path: {model_path}")
-        if config_path.exists():
-            logger.info(f"Using local config path: {config_path}")
-        else:
-            logger.warning(f"Local config file not found: {config_path}")
-
-        success = False
-        stderr = ""
-
-        try:
-            cmd = [
-                "python3", "-m", "piper",
-                "-m", str(model_path),
-                "-f", str(output_file),
-                "--", request.text
-            ]
-            logger.info(f"Trying new format: {' '.join(cmd)}")
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-            stdout, stderr = process.communicate()
-            if process.returncode == 0 and output_file.exists():
-                success = True
-                logger.info("New piper1-gpl format succeeded")
-            else:
-                logger.warning(
-                    f"New format failed - return code: {process.returncode}, "
-                    f"file exists: {output_file.exists()}, stderr: {stderr}"
-                )
-        except Exception as e:
-            logger.warning(f"Exception with new format: {e}")
-
-        if not success:
+        import shutil
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir_path = Path(temp_dir)
+            model_filename = f"{request.voice}.onnx"
+            config_filename = f"{request.voice}.onnx.json"
+            model_path = temp_dir_path / model_filename
+            config_path = temp_dir_path / config_filename
+            onnx_blob.download_to_filename(str(model_path))
+            logger.info(f"Downloaded model to {model_path}")
+            if json_blob.exists():
+                json_blob.download_to_filename(str(config_path))
+                logger.info(f"Downloaded metadata to {config_path}")
+            text_hash = hashlib.md5(request.text.encode()).hexdigest()
+            filename = f"{request.voice}_{text_hash}.wav"
+            output_file = temp_dir_path / filename
+            piper_path = find_piper_executable()
+            logger.info(f"Using piper executable: {piper_path}")
+            
+            # Try to determine the correct piper format
+            success = False
+            
+            # First try: new piper1-gpl CLI format with -m and -f
             try:
+                # Use the Python module format as documented
                 cmd = [
-                    piper_path,
+                    "python3", "-m", "piper",
                     "-m", str(model_path),
                     "-f", str(output_file),
                     "--", request.text
                 ]
-                logger.info(f"Trying direct binary format: {' '.join(cmd)}")
+                logger.info(f"Trying new format: {' '.join(cmd)}")
                 process = subprocess.Popen(
                     cmd,
                     stdout=subprocess.PIPE,
@@ -826,187 +559,148 @@ async def synthesize_speech(request: SynthesisRequest, req: Request, authorizati
                 stdout, stderr = process.communicate()
                 if process.returncode == 0 and output_file.exists():
                     success = True
-                    logger.info("Direct binary format succeeded")
+                    logger.info("New piper1-gpl format succeeded")
                 else:
-                    logger.warning(
-                        f"Direct binary format failed - return code: {process.returncode}, "
-                        f"file exists: {output_file.exists()}, stderr: {stderr}"
-                    )
+                    logger.warning(f"New format failed - return code: {process.returncode}, file exists: {output_file.exists()}, stderr: {stderr}")
             except Exception as e:
-                logger.warning(f"Exception with direct binary format: {e}")
-
-        if not success:
+                logger.warning(f"Exception with new format: {e}")
+            
+            # Second try: Direct binary approach (in case pip installed a binary)
+            if not success:
+                try:
+                    cmd = [
+                        piper_path,
+                        "-m", str(model_path),
+                        "-f", str(output_file),
+                        "--", request.text
+                    ]
+                    logger.info(f"Trying direct binary format: {' '.join(cmd)}")
+                    process = subprocess.Popen(
+                        cmd,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True,
+                    )
+                    stdout, stderr = process.communicate()
+                    if process.returncode == 0 and output_file.exists():
+                        success = True
+                        logger.info("Direct binary format succeeded")
+                    else:
+                        logger.warning(f"Direct binary format failed - return code: {process.returncode}, file exists: {output_file.exists()}, stderr: {stderr}")
+                except Exception as e:
+                    logger.warning(f"Exception with direct binary format: {e}")
+            
+            # Third try: legacy format with --model and stdin (fallback only)
+            if not success:
+                try:
+                    cmd = [
+                        piper_path,
+                        "--model", str(model_path),
+                        "--output_file", str(output_file),
+                        "--espeak-data", "/usr/share/espeak-ng-data",
+                    ]
+                    logger.info(f"Trying legacy format: {' '.join(cmd)}")
+                    process = subprocess.Popen(
+                        cmd,
+                        stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True,
+                    )
+                    stdout, stderr = process.communicate(input=request.text)
+                    if process.returncode == 0 and output_file.exists():
+                        success = True
+                        logger.info("Legacy format succeeded")
+                    else:
+                        logger.warning(f"Legacy format failed - return code: {process.returncode}, file exists: {output_file.exists()}, stderr: {stderr}")
+                except Exception as e:
+                    logger.warning(f"Exception with legacy format: {e}")
+            
+            if not success:
+                logger.error(f"All piper formats failed. Last error: {stderr}")
+                raise HTTPException(status_code=500, detail=f"Piper synthesis failed with all formats tried")
+            if not output_file.exists():
+                logger.error(f"Output file not found: {output_file}")
+                raise HTTPException(status_code=500, detail="Failed to generate audio file")
+            logger.info("Speech synthesis completed successfully")
+            firebase_url = None
+            storage_path = None
+            if bucket:
+                try:
+                    storage_path = f"audio/{filename}"
+                    blob = bucket.blob(storage_path)
+                    blob.upload_from_filename(str(output_file))
+                    blob.make_public()
+                    firebase_url = blob.public_url
+                    logger.info(f"Uploaded to Firebase Storage: {firebase_url}")
+                except Exception as e:
+                    logger.error(f"Failed to upload to Firebase Storage: {e}")
+                    firebase_url = None
+                    storage_path = None
+            uid = None
+            if authorization and authorization.startswith("Bearer "):
+                id_token = authorization.split(" ", 1)[1]
+                try:
+                    decoded = firebase_admin.auth.verify_id_token(id_token)
+                    uid = decoded["uid"]
+                except Exception:
+                    uid = None
+            logger.info(f"uid: {uid}")
+            # Calculate audio duration
+            duration = None
             try:
-                cmd = [
-                    piper_path,
-                    "--model", str(model_path),
-                    "--output_file", str(output_file),
-                    "--espeak-data", "/usr/share/espeak-ng-data",
-                ]
-                logger.info(f"Trying legacy format: {' '.join(cmd)}")
-                process = subprocess.Popen(
-                    cmd,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                )
-                stdout, stderr = process.communicate(input=request.text)
-                if process.returncode == 0 and output_file.exists():
-                    success = True
-                    logger.info("Legacy format succeeded")
+                import wave
+                with wave.open(str(output_file), 'rb') as wav_file:
+                    frames = wav_file.getnframes()
+                    sample_rate = wav_file.getframerate()
+                    duration = frames / sample_rate
+            except Exception as e:
+                logger.warning(f"Could not calculate audio duration: {e}")
+            
+            if db:
+                # Create searchable fields
+                text_words = [word.lower().strip('.,!?;:"()[]{}') for word in request.text.lower().split() if len(word.strip('.,!?;:"()[]{}')) > 2]
+                
+                if uid:
+                    recording_doc = {
+                        "id": f"{request.voice}_{text_hash}",
+                        "voice": request.voice,
+                        "text": request.text,
+                        "created": int(time.time()),
+                        "audioUrl": firebase_url,
+                        "storagePath": storage_path,
+                        "duration": duration,
+                        "textWords": text_words,
+                        "voiceLower": request.voice.lower()
+                    }
+                    db.collection("users").document(uid).collection("recordings").document(recording_doc["id"]).set(recording_doc)
                 else:
-                    logger.warning(
-                        f"Legacy format failed - return code: {process.returncode}, "
-                        f"file exists: {output_file.exists()}, stderr: {stderr}"
-                    )
-            except Exception as e:
-                logger.warning(f"Exception with legacy format: {e}")
-
-        if not success:
-            logger.error(f"All piper formats failed. Last error: {stderr}")
-            if output_file.exists():
-                os.remove(output_file)
-            raise HTTPException(status_code=500, detail="Piper synthesis failed with all formats tried")
-
-        if not output_file.exists():
-            logger.error(f"Output file not found: {output_file}")
-            raise HTTPException(status_code=500, detail="Failed to generate audio file")
-
-        logger.info("Speech synthesis completed successfully")
-
-        firebase_url = None
-        storage_path = None
-
-        if bucket:
-            try:
-                storage_path = f"audio/{wav_filename}"
-                blob = bucket.blob(storage_path)
-                blob.upload_from_filename(str(output_file))
-                blob.make_public()
-                firebase_url = blob.public_url
-                logger.info(f"Uploaded to Firebase Storage: {firebase_url}")
-            except Exception as e:
-                logger.error(f"Failed to upload to Firebase Storage: {e}")
-                firebase_url = None
-                storage_path = None
-
-        uid = None
-        if authorization and authorization.startswith("Bearer "):
-            id_token = authorization.split(" ", 1)[1]
-            try:
-                decoded = firebase_admin.auth.verify_id_token(id_token)
-                uid = decoded["uid"]
-            except Exception:
-                uid = None
-
-        logger.info(f"uid: {uid}")
-
-        duration = None
-        try:
-            import wave
-            with wave.open(str(output_file), "rb") as wav_file:
-                frames = wav_file.getnframes()
-                sample_rate = wav_file.getframerate()
-                duration = frames / sample_rate
-        except Exception as e:
-            logger.warning(f"Could not calculate audio duration: {e}")
-
-        if db:
-            text_words = [
-                word.lower().strip('.,!?;:"()[]{}')
-                for word in request.text.lower().split()
-                if len(word.strip('.,!?;:"()[]{}')) > 2
-            ]
-
-            if uid:
-                recording_doc = {
-                    "id": stem,
-                    "voice": request.voice,
-                    "text": request.text,
-                    "created": int(time.time()),
-                    "audioUrl": firebase_url,
-                    "storagePath": storage_path,
-                    "duration": duration,
-                    "textWords": text_words,
-                    "voiceLower": request.voice.lower()
-                }
-                db.collection("users").document(uid).collection("recordings").document(recording_doc["id"]).set(recording_doc)
+                    # Store anonymous recording in top-level 'recordings' collection
+                    recording_doc = {
+                        "id": f"{request.voice}_{text_hash}",
+                        "voice": request.voice,
+                        "text": request.text,
+                        "created": int(time.time()),
+                        "audioUrl": firebase_url,
+                        "storagePath": storage_path,
+                        "anonymous": True,
+                        "duration": duration,
+                        "textWords": text_words,
+                        "voiceLower": request.voice.lower()
+                    }
+                    db.collection("recordings").document(recording_doc["id"]).set(recording_doc)
+            # Return the audio file as a response
+            if firebase_url:
+                return {"audioUrl": firebase_url}
             else:
-                recording_doc = {
-                    "id": stem,
-                    "voice": request.voice,
-                    "text": request.text,
-                    "created": int(time.time()),
-                    "audioUrl": firebase_url,
-                    "storagePath": storage_path,
-                    "anonymous": True,
-                    "duration": duration,
-                    "textWords": text_words,
-                    "voiceLower": request.voice.lower()
-                }
-                db.collection("recordings").document(recording_doc["id"]).set(recording_doc)
-
-        if firebase_url:
-            if output_file.exists():
-                os.remove(output_file)
-            return {"audioUrl": firebase_url}
-
-        wav_output_path = OUTPUTS_DIR / wav_filename
-        mp3_output_path = OUTPUTS_DIR / mp3_filename
-
-        try:
-            shutil.copyfile(str(output_file), str(wav_output_path))
-
-            ffmpeg_path = find_ffmpeg_executable()
-
-            ffmpeg_cmd = [
-                ffmpeg_path,
-                "-y",
-                "-i", str(wav_output_path),
-                "-ac", "1",
-                "-ar", "22050",
-                "-codec:a", "libmp3lame",
-                "-b:a", "64k",
-                str(mp3_output_path)
-            ]
-
-            logger.info(f"Converting WAV to MP3: {' '.join(ffmpeg_cmd)}")
-            ffmpeg_result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
-
-            if ffmpeg_result.returncode != 0 or not mp3_output_path.exists():
-                logger.error(f"MP3 conversion failed: {ffmpeg_result.stderr}")
-
-                try:
-                    if wav_output_path.exists():
-                        wav_output_path.unlink()
-                except Exception as cleanup_error:
-                    logger.warning(f"Failed to remove partial WAV output {wav_output_path.name}: {cleanup_error}")
-
-                try:
-                    if mp3_output_path.exists():
-                        mp3_output_path.unlink()
-                except Exception as cleanup_error:
-                    logger.warning(f"Failed to remove partial MP3 output {mp3_output_path.name}: {cleanup_error}")
-
-                raise HTTPException(status_code=500, detail="Failed to generate MP3 output")
-
-        finally:
-            if output_file.exists():
-                os.remove(output_file)
-
-        return {"audioUrl": f"/outputs/{mp3_filename}"}
-
-
-
-    except HTTPException:
-        raise
+                return FileResponse(output_file, media_type="audio/wav", filename="speech.wav")
     except FileNotFoundError as e:
         logger.error(f"File not found error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         logger.error(f"Error synthesizing speech: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     import uvicorn
