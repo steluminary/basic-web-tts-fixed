@@ -213,7 +213,7 @@ services:
   read-only so you can tune runtime parameters for example, the number of workers without rebuilding the Docker image itself. See below for the full start.sh contents.
 </p>
 
-<p>
+<p><code>
 #!/bin/bash
 
 # Startup script for Basic TTS Web Application
@@ -227,7 +227,7 @@ exec gunicorn piper_tts_web.server:app \
     --worker-class uvicorn.workers.UvicornWorker \
     --bind 0.0.0.0:8000 \
     --timeout 600 
-</p>
+</code></p>
 
 <h2>Technology</h2>
 <ul>
