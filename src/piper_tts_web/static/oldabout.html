@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About - Basic Web TTS - Best Free Text to Speech Converter</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="icon" href="/static/black-transparent-basictts-favicon.png" media="(prefers-color-scheme: light)">
+  <link rel="icon" href="/static/white-transparent-basictts-favicon.png" media="(prefers-color-scheme: dark)">
+  <style>
+    ul.about-main, ol.about-main {
+      margin-left: 2em;
+      margin-bottom: 1.2em;
+    }
+    ul.about-sub, ol.about-sub {
+      margin-left: 4em;
+      margin-bottom: 0.7em;
+    }
+    .container h2 {
+      margin-top: 0.7em;
+      margin-bottom: 1em;
+    }
+    .container p {
+      margin-bottom: 0.7em;
+    }
+  </style>
+</head>
+<body>
+    <header style="width:100%; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.03); position:relative; z-index:10;">
+      <nav style="display:flex; align-items:center; justify-content:space-between; max-width:1200px; margin:0 auto; padding:0.7em 2em;" aria-label="Main navigation">
+        <a href="/" id="logo-link" style="display:flex; align-items:center; text-decoration:none;">
+          <img src="/static/black-transparent-basictts-logo.png" alt="Basic TTS logo" style="height:38px; width:auto; margin-right:0.7em;">
+        </a>
+        <div style="display:flex; align-items:center; gap:2em;">
+          <a href="/about" id="about-link" style="text-decoration:none; font-weight:500; font-size:1.1em; color:#222;">About</a>
+          <span id="auth-links" style="display:none;">
+            <a href="#" id="signup-link" style="font-weight: bold;">Sign Up</a> |
+            <a href="#" id="login-link">Log In</a>
+          </span>
+          <span id="user-info" style="display:none;"></span>
+        </div>
+      </nav>
+    </header>
+    <div class="container">
+      <h1>About Basic TTS</h1>
+      <p><strong>Basic TTS</strong> is a simple, user-friendly web application that lets you convert text into natural-sounding speech using a variety of high-quality voice models. Designed for ease of use and flexibility, it provides a modern interface for experimenting with text-to-speech (TTS) technology powered by <a href="https://github.com/OHF-Voice/piper1-gpl" target="_blank" rel="noopener">Piper.</a></p>
+      <p style="margin-top:2em; color:#666; font-size:1em;">Basic TTS was created by Patrick Metzger.</p>
+      <h2>Key Features</h2>
+      <ul class="about-main">
+        <li><strong>Multiple Voices:</strong> Choose from a range of English voices, each with its own unique accent and style.</li>
+        <li><strong>Instant Conversion:</strong> Enter your text, select a voice, and generate speech audio in seconds.</li>
+        <li><strong>Audio Controls:</strong> Play, pause, adjust playback speed, or download the generated audio for offline use.</li>
+        <li><strong>Progress Feedback:</strong> See real-time progress as your text is processed and converted.</li>
+        <li><strong>Open Source:</strong> The project is open source and easy to deploy, modify, or extend. <a href="https://github.com/prossm/basic-web-tts" target="_blank" rel="noopener">View on GitHub</a></li>
+      </ul>
+
+      <h2>How It Works</h2>
+      <ol class="about-main">
+        <li><strong>Select a Voice:</strong> Pick from the available voices in the dropdown menu.</li>
+        <li><strong>Enter Text:</strong> Type or paste the text you want to convert.</li>
+        <li><strong>Convert:</strong> Click "Convert to Speech" and wait for the audio to be generated.</li>
+        <li><strong>Listen or Download:</strong> Use the built-in audio player to listen, adjust speed, or download the result.</li>
+      </ol>
+
+      <h2>Technology</h2>
+      <ul class="about-main">
+        <li><strong>Backend:</strong> Python, using <a href="https://github.com/OHF-Voice/piper1-gpl" target="_blank" rel="noopener">Piper</a> for TTS synthesis.</li>
+        <li><strong>Frontend:</strong> Modern JavaScript, HTML, and CSS for a responsive web interface.</li>
+      </ul>
+
+      <hr style="margin: 2em 0;">
+      <p>For more details and to view the open source code, see the <a href="https://github.com/prossm/basic-web-tts" target="_blank" rel="noopener">GitHub repository</a>.</p>
+    </div>
+    <footer style="margin:2.5em auto 1.5em auto; max-width:600px; text-align:center; color:#888; font-size:0.98em;">
+      <a href="/terms" style="color:#337ab7; text-decoration:underline; font-weight:500; margin-right:1.5em;">Terms of Service</a>
+      <a href="/privacy" style="color:#337ab7; text-decoration:underline; font-weight:500;">Privacy Policy</a>
+    </footer>
+  <script src="/static/app.js"></script>
+</body>
+</html> 
