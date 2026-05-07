@@ -76,7 +76,7 @@
 </p>
 
 <p>
-  On the web UI, you type text, pick a voice, and generate speech. You can listen in the
+  On the web UI, you type or paste text, pick a voice, and generate speech. You can listen in the
   browser or download the resulting audio. It is useful for accessibility, content creation,
   testing, and other local TTS workflows.
 </p>
@@ -93,10 +93,10 @@
 
 <h2>Key Features</h2>
 <ul>
-  <li>Multiple voices: Choose from a range of English voices, each with its own accent and style.</li>
-  <li>Instant conversion: Enter your text, select a voice, and generate speech audio in seconds.</li>
+  <li>Multiple voices: Download any onyx voices (and the needed json file) from huggingface.</li>
+  <li>Instant conversion: Enter your text, select a voice, and generate speech audio on your own server.</li>
   <li>File management: Each conversion produces a WAV file and an MP3 version automatically, so you can download either format for use in editors, games, or other tools.</li>
-  <li>Audio controls: Play and pause in the browser and scrub through the generated audio; then download the file when you are satisfied with the result.</li>
+  <li>Audio controls: Play and pause in the browser and scrub through the generated audio, download the mp3 or wav easily.</li>
   <li>Progress feedback: See progress as your text is processed and converted.</li>
   <li>Open source and self-hosted: The project is open source and designed to be easy to deploy, modify, or extend on your own hardware.</li>
 </ul>
@@ -142,11 +142,6 @@
   <li>Click “Convert to Speech” and wait for the audio to be generated.</li>
   <li>Use the built-in audio player to listen and, when ready, download the WAV or MP3 file.</li>
 </ol>
-
-<p>
-  Note: The built-in audio player provides basic playback controls (play/pause and scrub), but
-  does not currently include a playback speed slider.
-</p>
 
 <h2>Self‑Hosting and Docker Layout</h2>
 
@@ -205,19 +200,33 @@ services:
     ports:
       - 8888:8000
     volumes:
-      - /path/to/basictts/models:/app/src/piper_tts_web/models
-      - /path/to/basictts/outputs:/app/src/piper_tts_web/outputs
-      - /path/to/basictts/config/start.sh:/app/start.sh:ro
+      - /host/path/to/basictts/models:/app/src/piper_tts_web/models
+      - /host/path/to/basictts/outputs:/app/src/piper_tts_web/outputs
+      - /host/path/to/basictts/config/start.sh:/app/start.sh:ro
     mem_limit: 3g
 </code></pre>
 
 <p>
-  Adjust <code>/path/to/basictts/models</code>, <code>/path/to/basictts/outputs</code>, and
-  <code>/path/to/basictts/config/start.sh</code> to match your own filesystem layout. The idea
+  Adjust host paths to match your own filesystem layout. The idea
   is to keep models, outputs, and configuration on the host so you can update voices and
   collect audio without rebuilding the image. The <code>start.sh</code> file is mapped in as
-  read-only so you can tune runtime parameters (for example, the number of workers or other
-  Piper options) without rebuilding the Docker image itself.
+  read-only so you can tune runtime parameters for example, the number of workers without rebuilding the Docker image itself. See below for the full start.sh contents.
+</p>
+
+<p>
+#!/bin/bash
+
+# Startup script for Basic TTS Web Application
+set -e
+
+echo "Starting Basic TTS Web Application..."
+
+echo "Starting server..."
+exec gunicorn piper_tts_web.server:app \
+    --workers 1 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind 0.0.0.0:8000 \
+    --timeout 600 
 </p>
 
 <h2>Technology</h2>

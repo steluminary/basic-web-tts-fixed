@@ -983,16 +983,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 
-    if (deleteAllOutputsButton) {
-        deleteAllOutputsButton.addEventListener('click', async function() {
-            try {
-                await deleteAllOutputs();
-            } catch (error) {
-                console.error('Error deleting all outputs:', error);
-                alert(error.message || 'Failed to delete all outputs.');
-            }
-        });
-    }
+    // if (deleteAllOutputsButton) {
+    //     deleteAllOutputsButton.addEventListener('click', async function() {
+    //         try {
+    //             await deleteAllOutputs();
+    //         } catch (error) {
+    //             console.error('Error deleting all outputs:', error);
+    //             alert(error.message || 'Failed to delete all outputs.');
+    //         }
+    //     });
+    // }
 
     if (voiceSelect) {
         loadVoices();
