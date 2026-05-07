@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Voice Benchmark Explorer</title>
+  <title>Piper Voice Benchmarks</title>
 
   <style>
     body {
@@ -12,19 +12,17 @@
       color: #111;
     }
 
-    h1 {
-      margin-bottom: 6px;
-    }
+    h1 { margin-bottom: 6px; }
 
     .sub {
       color: #666;
-      margin-bottom: 18px;
+      margin-bottom: 20px;
       font-size: 14px;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
       gap: 12px;
     }
 
@@ -36,9 +34,9 @@
     }
 
     .name {
-      font-weight: 600;
-      font-size: 14px;
+      font-weight: 700;
       margin-bottom: 6px;
+      font-size: 14px;
     }
 
     audio {
@@ -47,29 +45,24 @@
     }
 
     .meta {
-      margin-top: 8px;
       font-size: 12px;
-      color: #444;
+      margin-top: 8px;
+      color: #333;
       line-height: 1.5;
     }
 
     .tag {
       display: inline-block;
+      padding: 2px 6px;
       background: #eee;
       border-radius: 4px;
-      padding: 2px 6px;
-      margin-right: 6px;
-      margin-bottom: 4px;
+      margin-right: 5px;
       font-size: 11px;
-    }
-
-    .links {
-      margin-top: 8px;
-      font-size: 12px;
     }
 
     .links a {
       margin-right: 10px;
+      font-size: 12px;
       color: #0366d6;
       text-decoration: none;
     }
@@ -82,100 +75,533 @@
 
 <body>
 
-<h1>Voice Benchmark Explorer</h1>
-<div class="sub">
-  Click play to compare voices. Lower RTF = faster inference.
+<h1>Piper Voice Benchmarks</h1>
+<div class="sub">Static benchmark viewer (no JS, no CSV, fully offline-rendered)</div>
+
+<div class="grid">
+
+<!-- ================= EN_GB ================= -->
+
+<div class="card">
+  <div class="name">en_GB-alan-low</div>
+  <audio controls src="benchmark/en_GB-alan-low.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_GB-alan-low.mp3" download>mp3</a>
+    <a href="benchmark/en_GB-alan-low.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1065</span>
+    <span class="tag">61MB</span><br>
+    Gen: 3.641s | Audio: 34.176s
+  </div>
 </div>
 
-<div id="app" class="grid"></div>
+<div class="card">
+  <div class="name">en_GB-alan-medium</div>
+  <audio controls src="benchmark/en_GB-alan-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_GB-alan-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_GB-alan-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1262</span>
+    <span class="tag">61MB</span><br>
+    Gen: 4.383s | Audio: 34.725s
+  </div>
+</div>
 
-<script>
-const BASE = "benchmark/";
+<div class="card">
+  <div class="name">en_GB-alba-medium</div>
+  <audio controls src="benchmark/en_GB-alba-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_GB-alba-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_GB-alba-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1521</span>
+    <span class="tag">61MB</span><br>
+    Gen: 4.378s | Audio: 28.792s
+  </div>
+</div>
 
-// ---- embedded data (NO CSV, fully static) ----
-const DATA = [
-  {
-    voice: "en_GB-alan-low",
-    rtf: 0.1065,
-    gen: 3.64,
-    audio: 34.17,
-    size: 61
-  },
-  {
-    voice: "en_GB-alan-medium",
-    rtf: 0.1262,
-    gen: 4.38,
-    audio: 34.72,
-    size: 61
-  },
-  {
-    voice: "en_GB-alba-medium",
-    rtf: 0.1521,
-    gen: 4.37,
-    audio: 28.79,
-    size: 61
-  },
-  {
-    voice: "en_US-lessac-high",
-    rtf: 0.4347,
-    gen: 12.63,
-    audio: 29.07,
-    size: 109
-  },
-  {
-    voice: "en_US-ljspeech-high",
-    rtf: 0.4269,
-    gen: 13.42,
-    audio: 31.43,
-    size: 109
-  },
-  {
-    voice: "en_US-ryan-high",
-    rtf: 0.3774,
-    gen: 10.36,
-    audio: 27.45,
-    size: 116
-  },
-  // (rest omitted for brevity in this message — you should paste full list)
-];
+<div class="card">
+  <div class="name">en_GB-aru-medium</div>
+  <audio controls src="benchmark/en_GB-aru-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_GB-aru-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_GB-aru-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1312</span>
+    <span class="tag">74MB</span><br>
+    Gen: 4.381s | Audio: 33.390s
+  </div>
+</div>
 
-// ---- helpers ----
-function file(name, ext) {
-  return `${BASE}${name}.${ext}`;
-}
+<div class="card">
+  <div class="name">en_GB-cori-high</div>
+  <audio controls src="benchmark/en_GB-cori-high.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_GB-cori-high.mp3" download>mp3</a>
+    <a href="benchmark/en_GB-cori-high.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.3597</span>
+    <span class="tag">109MB</span><br>
+    Gen: 10.299s | Audio: 28.630s
+  </div>
+</div>
 
-function card(v) {
-  return `
-    <div class="card">
-      <div class="name">${v.voice}</div>
+<div class="card">
+  <div class="name">en_GB-cori-medium</div>
+  <audio controls src="benchmark/en_GB-cori-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_GB-cori-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_GB-cori-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1499</span>
+    <span class="tag">61MB</span><br>
+    Gen: 4.453s | Audio: 29.709s
+  </div>
+</div>
 
-      <audio controls preload="none">
-        <source src="${file(v.voice,'mp3')}" type="audio/mpeg">
-        <source src="${file(v.voice,'wav')}" type="audio/wav">
-      </audio>
+<div class="card">
+  <div class="name">en_GB-jenny_dioco-medium</div>
+  <audio controls src="benchmark/en_GB-jenny_dioco-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_GB-jenny_dioco-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_GB-jenny_dioco-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1383</span>
+    <span class="tag">61MB</span><br>
+    Gen: 4.221s | Audio: 30.534s
+  </div>
+</div>
 
-      <div class="meta">
-        <span class="tag">RTF ${v.rtf}</span>
-        <span class="tag">Gen ${v.gen}s</span>
-        <span class="tag">Audio ${v.audio}s</span>
-        <span class="tag">${v.size}MB</span>
-      </div>
+<div class="card">
+  <div class="name">en_GB-northern_english_male-medium</div>
+  <audio controls src="benchmark/en_GB-northern_english_male-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_GB-northern_english_male-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_GB-northern_english_male-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1391</span>
+    <span class="tag">61MB</span><br>
+    Gen: 3.833s | Audio: 27.562s
+  </div>
+</div>
 
-      <div class="links">
-        <a href="${file(v.voice,'mp3')}" download>MP3</a>
-        <a href="${file(v.voice,'wav')}" download>WAV</a>
-      </div>
-    </div>
-  `;
-}
+<div class="card">
+  <div class="name">en_GB-semaine-medium</div>
+  <audio controls src="benchmark/en_GB-semaine-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_GB-semaine-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_GB-semaine-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1166</span>
+    <span class="tag">74MB</span><br>
+    Gen: 3.414s | Audio: 29.291s
+  </div>
+</div>
 
-// ---- render ----
-document.getElementById("app").innerHTML =
-  DATA
-    .sort((a,b) => a.rtf - b.rtf)
-    .map(card)
-    .join("");
-</script>
+<div class="card">
+  <div class="name">en_GB-southern_english_female-low</div>
+  <audio controls src="benchmark/en_GB-southern_english_female-low.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_GB-southern_english_female-low.mp3" download>mp3</a>
+    <a href="benchmark/en_GB-southern_english_female-low.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1327</span>
+    <span class="tag">61MB</span><br>
+    Gen: 3.761s | Audio: 28.336s
+  </div>
+</div>
 
+<div class="card">
+  <div class="name">en_GB-vctk-medium</div>
+  <audio controls src="benchmark/en_GB-vctk-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_GB-vctk-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_GB-vctk-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1632</span>
+    <span class="tag">74MB</span><br>
+    Gen: 3.658s | Audio: 22.418s
+  </div>
+</div>
+
+<!-- ================= EN_US ================= -->
+
+<div class="card">
+  <div class="name">en_US-amy-low</div>
+  <audio controls src="benchmark/en_US-amy-low.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-amy-low.mp3" download>mp3</a>
+    <a href="benchmark/en_US-amy-low.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1197</span>
+    <span class="tag">61MB</span><br>
+    Gen: 3.849s | Audio: 32.160s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-amy-medium</div>
+  <audio controls src="benchmark/en_US-amy-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-amy-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_US-amy-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1126</span>
+    <span class="tag">61MB</span><br>
+    Gen: 3.659s | Audio: 32.484s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-arctic-medium</div>
+  <audio controls src="benchmark/en_US-arctic-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-arctic-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_US-arctic-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1418</span>
+    <span class="tag">74MB</span><br>
+    Gen: 4.063s | Audio: 28.665s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-bryce-medium</div>
+  <audio controls src="benchmark/en_US-bryce-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-bryce-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_US-bryce-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1350</span>
+    <span class="tag">61MB</span><br>
+    Gen: 5.107s | Audio: 37.836s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-danny-low</div>
+  <audio controls src="benchmark/en_US-danny-low.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-danny-low.mp3" download>mp3</a>
+    <a href="benchmark/en_US-danny-low.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1329</span>
+    <span class="tag">61MB</span><br>
+    Gen: 3.666s | Audio: 27.584s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-hfc_female-medium</div>
+  <audio controls src="benchmark/en_US-hfc_female-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-hfc_female-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_US-hfc_female-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1468</span>
+    <span class="tag">61MB</span><br>
+    Gen: 4.251s | Audio: 28.966s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-hfc_male-medium</div>
+  <audio controls src="benchmark/en_US-hfc_male-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-hfc_male-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_US-hfc_male-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1411</span>
+    <span class="tag">61MB</span><br>
+    Gen: 3.874s | Audio: 27.469s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-joe-medium</div>
+  <audio controls src="benchmark/en_US-joe-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-joe-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_US-joe-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1423</span>
+    <span class="tag">61MB</span><br>
+    Gen: 4.144s | Audio: 29.129s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-john-medium</div>
+  <audio controls src="benchmark/en_US-john-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-john-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_US-john-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1309</span>
+    <span class="tag">61MB</span><br>
+    Gen: 4.297s | Audio: 32.821s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-kathleen-low</div>
+  <audio controls src="benchmark/en_US-kathleen-low.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-kathleen-low.mp3" download>mp3</a>
+    <a href="benchmark/en_US-kathleen-low.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1135</span>
+    <span class="tag">61MB</span><br>
+    Gen: 3.514s | Audio: 30.960s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-kristin-medium</div>
+  <audio controls src="benchmark/en_US-kristin-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-kristin-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_US-kristin-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1373</span>
+    <span class="tag">61MB</span><br>
+    Gen: 4.282s | Audio: 31.184s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-kusal-medium</div>
+  <audio controls src="benchmark/en_US-kusal-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-kusal-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_US-kusal-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1475</span>
+    <span class="tag">61MB</span><br>
+    Gen: 3.982s | Audio: 26.993s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-l2arctic-medium</div>
+  <audio controls src="benchmark/en_US-l2arctic-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-l2arctic-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_US-l2arctic-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1229</span>
+    <span class="tag">74MB</span><br>
+    Gen: 4.176s | Audio: 33.982s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-lessac-high</div>
+  <audio controls src="benchmark/en_US-lessac-high.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-lessac-high.mp3" download>mp3</a>
+    <a href="benchmark/en_US-lessac-high.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.4347</span>
+    <span class="tag">109MB</span><br>
+    Gen: 12.636s | Audio: 29.071s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-lessac-low</div>
+  <audio controls src="benchmark/en_US-lessac-low.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-lessac-low.mp3" download>mp3</a>
+    <a href="benchmark/en_US-lessac-low.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1337</span>
+    <span class="tag">61MB</span><br>
+    Gen: 3.945s | Audio: 29.520s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-lessac-medium</div>
+  <audio controls src="benchmark/en_US-lessac-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-lessac-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_US-lessac-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1394</span>
+    <span class="tag">61MB</span><br>
+    Gen: 3.939s | Audio: 28.258s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-libritts-high</div>
+  <audio controls src="benchmark/en_US-libritts-high.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-libritts-high.mp3" download>mp3</a>
+    <a href="benchmark/en_US-libritts-high.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.3861</span>
+    <span class="tag">131MB</span><br>
+    Gen: 11.242s | Audio: 29.117s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-libritts_r-medium</div>
+  <audio controls src="benchmark/en_US-libritts_r-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-libritts_r-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_US-libritts_r-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1315</span>
+    <span class="tag">75MB</span><br>
+    Gen: 3.217s | Audio: 24.462s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-ljspeech-high</div>
+  <audio controls src="benchmark/en_US-ljspeech-high.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-ljspeech-high.mp3" download>mp3</a>
+    <a href="benchmark/en_US-ljspeech-high.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.4269</span>
+    <span class="tag">109MB</span><br>
+    Gen: 13.421s | Audio: 31.439s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-ljspeech-medium</div>
+  <audio controls src="benchmark/en_US-ljspeech-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-ljspeech-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_US-ljspeech-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1347</span>
+    <span class="tag">61MB</span><br>
+    Gen: 4.287s | Audio: 31.822s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-norman-medium</div>
+  <audio controls src="benchmark/en_US-norman-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-norman-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_US-norman-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1332</span>
+    <span class="tag">61MB</span><br>
+    Gen: 4.165s | Audio: 31.265s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-reza_ibrahim-medium</div>
+  <audio controls src="benchmark/en_US-reza_ibrahim-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-reza_ibrahim-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_US-reza_ibrahim-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1188</span>
+    <span class="tag">61MB</span><br>
+    Gen: 4.557s | Audio: 38.347s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-ryan-high</div>
+  <audio controls src="benchmark/en_US-ryan-high.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-ryan-high.mp3" download>mp3</a>
+    <a href="benchmark/en_US-ryan-high.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.3774</span>
+    <span class="tag">116MB</span><br>
+    Gen: 10.361s | Audio: 27.457s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-ryan-low</div>
+  <audio controls src="benchmark/en_US-ryan-low.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-ryan-low.mp3" download>mp3</a>
+    <a href="benchmark/en_US-ryan-low.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1278</span>
+    <span class="tag">61MB</span><br>
+    Gen: 3.369s | Audio: 26.368s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-ryan-medium</div>
+  <audio controls src="benchmark/en_US-ryan-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-ryan-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_US-ryan-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1547</span>
+    <span class="tag">61MB</span><br>
+    Gen: 4.127s | Audio: 26.679s
+  </div>
+</div>
+
+<div class="card">
+  <div class="name">en_US-sam-medium</div>
+  <audio controls src="benchmark/en_US-sam-medium.mp3"></audio>
+  <div class="links">
+    <a href="benchmark/en_US-sam-medium.mp3" download>mp3</a>
+    <a href="benchmark/en_US-sam-medium.wav" download>wav</a>
+  </div>
+  <div class="meta">
+    <span class="tag">RTF 0.1227</span>
+    <span class="tag">61MB</span><br>
+    Gen: 3.607s | Audio: 29.396s
+  </div>
+</div>
+
+</div>
 </body>
 </html>
