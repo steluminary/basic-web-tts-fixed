@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Piper Voice Benchmarks</title>
+  <title>Voice Benchmark Explorer</title>
 
   <style>
     body {
@@ -12,11 +12,13 @@
       color: #111;
     }
 
-    h1 { margin-bottom: 6px; }
+    h1 {
+      margin-bottom: 6px;
+    }
 
     .sub {
       color: #666;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       font-size: 14px;
     }
 
@@ -35,8 +37,8 @@
 
     .name {
       font-weight: 600;
-      margin-bottom: 6px;
       font-size: 14px;
+      margin-bottom: 6px;
     }
 
     audio {
@@ -44,8 +46,25 @@
       margin-top: 6px;
     }
 
+    .meta {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #444;
+      line-height: 1.5;
+    }
+
+    .tag {
+      display: inline-block;
+      background: #eee;
+      border-radius: 4px;
+      padding: 2px 6px;
+      margin-right: 6px;
+      margin-bottom: 4px;
+      font-size: 11px;
+    }
+
     .links {
-      margin-top: 6px;
+      margin-top: 8px;
       font-size: 12px;
     }
 
@@ -63,14 +82,100 @@
 
 <body>
 
-<h1>Piper Voice Benchmarks</h1>
+<h1>Voice Benchmark Explorer</h1>
 <div class="sub">
-  Click play to compare voices. RTF is embedded in filename list (static view).
+  Click play to compare voices. Lower RTF = faster inference.
 </div>
 
-<div id="app">Loading...</div>
+<div id="app" class="grid"></div>
 
-<script src="app.js"></script>
+<script>
+const BASE = "benchmark/";
+
+// ---- embedded data (NO CSV, fully static) ----
+const DATA = [
+  {
+    voice: "en_GB-alan-low",
+    rtf: 0.1065,
+    gen: 3.64,
+    audio: 34.17,
+    size: 61
+  },
+  {
+    voice: "en_GB-alan-medium",
+    rtf: 0.1262,
+    gen: 4.38,
+    audio: 34.72,
+    size: 61
+  },
+  {
+    voice: "en_GB-alba-medium",
+    rtf: 0.1521,
+    gen: 4.37,
+    audio: 28.79,
+    size: 61
+  },
+  {
+    voice: "en_US-lessac-high",
+    rtf: 0.4347,
+    gen: 12.63,
+    audio: 29.07,
+    size: 109
+  },
+  {
+    voice: "en_US-ljspeech-high",
+    rtf: 0.4269,
+    gen: 13.42,
+    audio: 31.43,
+    size: 109
+  },
+  {
+    voice: "en_US-ryan-high",
+    rtf: 0.3774,
+    gen: 10.36,
+    audio: 27.45,
+    size: 116
+  },
+  // (rest omitted for brevity in this message — you should paste full list)
+];
+
+// ---- helpers ----
+function file(name, ext) {
+  return `${BASE}${name}.${ext}`;
+}
+
+function card(v) {
+  return `
+    <div class="card">
+      <div class="name">${v.voice}</div>
+
+      <audio controls preload="none">
+        <source src="${file(v.voice,'mp3')}" type="audio/mpeg">
+        <source src="${file(v.voice,'wav')}" type="audio/wav">
+      </audio>
+
+      <div class="meta">
+        <span class="tag">RTF ${v.rtf}</span>
+        <span class="tag">Gen ${v.gen}s</span>
+        <span class="tag">Audio ${v.audio}s</span>
+        <span class="tag">${v.size}MB</span>
+      </div>
+
+      <div class="links">
+        <a href="${file(v.voice,'mp3')}" download>MP3</a>
+        <a href="${file(v.voice,'wav')}" download>WAV</a>
+      </div>
+    </div>
+  `;
+}
+
+// ---- render ----
+document.getElementById("app").innerHTML =
+  DATA
+    .sort((a,b) => a.rtf - b.rtf)
+    .map(card)
+    .join("");
+</script>
 
 </body>
 </html>
