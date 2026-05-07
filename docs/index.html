@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -48,15 +49,20 @@
       font-size: 12px;
       margin-top: 8px;
       color: #333;
-      line-height: 1.5;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 8px;
+      margin-top: 4px;
     }
 
     .tag {
-      display: inline-block;
+      display: block;
       padding: 2px 6px;
       background: #eee;
       border-radius: 4px;
-      margin-right: 5px;
       font-size: 11px;
     }
 
@@ -84,15 +90,25 @@
 
 <div class="card">
   <div class="name">en_GB-alan-low</div>
+
   <audio controls src="benchmark/en_GB-alan-low.mp3"></audio>
+
   <div class="links">
-    <a href="benchmark/en_GB-alan-low.mp3" download>mp3</a>
-    <a href="benchmark/en_GB-alan-low.wav" download>wav</a>
+    <a href="benchmark/en_GB-alan-low.mp3" download>Download mp3</a>
+    <a href="benchmark/en_GB-alan-low.wav" download>Download wav</a>
   </div>
+
   <div class="meta">
-    <span class="tag">RTF 0.1065</span>
-    <span class="tag">61MB</span><br>
-    Gen: 3.641s | Audio: 34.176s
+    <div class="meta-grid">
+      <span class="tag">Realtime factor: 0.1065</span>
+      <span class="tag">Model size: 61 MB</span>
+
+      <span class="tag">Generation time: 3.641 s</span>
+      <span class="tag">WAV size: 1.04 MB</span>
+
+      <span class="tag">Duration: 34.176 s</span>
+      <span class="tag">MP3 size: 0.22 MB</span>
+    </div>
   </div>
 </div>
 
