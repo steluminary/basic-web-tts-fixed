@@ -11,8 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const outputsList = document.getElementById('outputs-list');
     const refreshOutputsButton = document.getElementById('refresh-outputs-button');
     const deleteSelectedButton = document.getElementById('delete-selected-button');
-    //const deleteAllOutputsButton = document.getElementById('delete-all-outputs-button');
-    const selectAllOutputsCheckbox = document.getElementById('select-all-outputs');
+    const deleteAllOutputsButton = document.getElementById('delete-all-outputs-button');
     const downloadButton = document.getElementById('download-button');
 
     // Firebase dynamic config and auth logic
@@ -164,18 +163,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="output-meta">${escapeHtml(metaParts.join(' • '))}</div>
 
                         <div class="output-actions">
-                            ${hasMp3 ? `<button type="button" class="btn btn-secondary load-mp3-button" data-url="${mp3Url}" data-download-name="${escapeHtml(rawName + '.mp3')}">Load MP3 in Player</button>` : ''}
-                            ${hasWav ? `<button type="button" class="btn btn-secondary load-wav-button" data-url="${wavUrl}" data-download-name="${escapeHtml(rawName + '.wav')}">Load WAV in Player</button>` : ''}
-
+                            ${playUrl ? `<button type="button" class="btn btn-secondary play-output-button" data-url="${playUrl}" data-download-name="${escapeHtml(preferredDownloadName)}">Play</button>` : ''}
                             ${hasMp3 ? `<a href="${mp3Url}" download="${escapedName}.mp3" class="output-link">Download MP3</a>` : ''}
                             ${hasWav ? `<a href="${wavUrl}" download="${escapedName}.wav" class="output-link">Download WAV</a>` : ''}
-
+                            ${preferredDownloadUrl ? `<button type="button" class="btn btn-secondary queue-output-button" data-url="${preferredDownloadUrl}" data-download-name="${escapeHtml(preferredDownloadName)}">Load in Player</button>` : ''}
                             <button type="button" class="delete-output-button" data-name="${escapedName}">Delete</button>
                         </div>
                     </div>
                 </div>
             `;
-                    }).join('');
+        }).join('');
     }
 
     async function deleteOutputByName(name) {
@@ -915,20 +912,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (outputsList) {
         outputsList.addEventListener('click', async function(e) {
-            const loadMp3Button = e.target.closest('.load-mp3-button');
-            if (loadMp3Button) {
-                const url = loadMp3Button.getAttribute('data-url');
-                const downloadName = loadMp3Button.getAttribute('data-download-name') || 'audio.mp3';
+            const playButton = e.target.closest('.play-output-button');
+            if (playButton) {
+                const url = playButton.getAttribute('data-url');
+                const downloadName = playButton.getAttribute('data-download-name') || 'audio.mp3';
                 if (url) {
                     setMainPlayer(url, downloadName);
                 }
                 return;
             }
 
-            const loadWavButton = e.target.closest('.load-wav-button');
-            if (loadWavButton) {
-                const url = loadWavButton.getAttribute('data-url');
-                const downloadName = loadWavButton.getAttribute('data-download-name') || 'audio.wav';
+            const queueButton = e.target.closest('.queue-output-button');
+            if (queueButton) {
+                const url = queueButton.getAttribute('data-url');
+                const downloadName = queueButton.getAttribute('data-download-name') || 'audio.mp3';
                 if (url) {
                     setMainPlayer(url, downloadName);
                 }
@@ -971,17 +968,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
-    if (selectAllOutputsCheckbox && outputsList) {
-        selectAllOutputsCheckbox.addEventListener('change', function() {
-            const checked = selectAllOutputsCheckbox.checked;
-            const checkboxes = outputsList.querySelectorAll('.output-checkbox');
-            checkboxes.forEach(cb => {
-                cb.checked = checked;
-            });
-        });
-    }
-
 
     if (deleteAllOutputsButton) {
         deleteAllOutputsButton.addEventListener('click', async function() {

@@ -95,17 +95,52 @@
 <ul>
   <li>Multiple voices: Choose from a range of English voices, each with its own accent and style.</li>
   <li>Instant conversion: Enter your text, select a voice, and generate speech audio in seconds.</li>
-  <li>Audio controls: Play, pause, and download the generated audio for offline use.</li>
+  <li>File management: Each conversion produces a WAV file and an MP3 version automatically, so you can download either format for use in editors, games, or other tools.</li>
+  <li>Audio controls: Play and pause in the browser and scrub through the generated audio; then download the file when you are satisfied with the result.</li>
   <li>Progress feedback: See progress as your text is processed and converted.</li>
   <li>Open source and self-hosted: The project is open source and designed to be easy to deploy, modify, or extend on your own hardware.</li>
 </ul>
+
+<h2>Sample Voices and Benchmarks</h2>
+
+<p>
+  To help you choose a voice, there is a separate benchmark page with sample audio and timing
+  metrics for many Piper voices. You can listen to each sample and see generation time,
+  realtime factor, and file sizes side-by-side.
+</p>
+
+<p>
+  The voice samples and metrics are published at:
+  <a href="https://steluminary.github.io/basic-web-tts-fixed/index.html" target="_blank" rel="noopener">
+    Piper Voice Benchmarks
+  </a>.
+</p>
+
+<h2>Installing Voices from Hugging Face</h2>
+
+<p>
+  Basic TTS uses Piper voice models stored in the <code>models</code> directory inside the
+  container (mapped to a host directory via Docker). You can download additional voices from
+  the Piper voices collection on Hugging Face:
+  <a href="https://huggingface.co/rhasspy/piper-voices" target="_blank" rel="noopener">
+    https://huggingface.co/rhasspy/piper-voices
+  </a>.
+</p>
+
+<p>
+  For each voice you want to add, download the <code>.onnx</code> model file and its matching
+  <code>.onnx.json</code> config file into your host-side <code>models</code> directory. When
+  the container starts, Basic TTS scans that directory and makes the installed voices
+  available in the voice dropdown, so you can try them immediately without rebuilding the
+  image.
+</p>
 
 <h2>How It Works (Web UI)</h2>
 <ol>
   <li>Select a voice from the available voices in the dropdown menu.</li>
   <li>Type or paste the text you want to convert.</li>
   <li>Click “Convert to Speech” and wait for the audio to be generated.</li>
-  <li>Use the built-in audio player to listen or download the result.</li>
+  <li>Use the built-in audio player to listen and, when ready, download the WAV or MP3 file.</li>
 </ol>
 
 <p>
@@ -128,35 +163,11 @@
 </ul>
 
 <p>
-  In a typical <code>docker-compose.yml</code>, these are mapped to host directories like:
+  These paths are usually mapped to host directories so you can manage models, keep outputs,
+  and tweak startup behavior without rebuilding the image.
 </p>
 
-<pre><code>version: "3.8"
-services:
-  basictts:
-    build:
-      context: /mnt/home/docker/basictts/src
-    image: piper-tts-web:latest
-    container_name: basictts
-    restart: unless-stopped
-    ports:
-      - 8851:8000
-    volumes:
-      - /mnt/home/docker/basictts/models:/app/src/piper_tts_web/models
-      - /mnt/home/docker/basictts/outputs:/app/src/piper_tts_web/outputs
-      - /mnt/home/docker/basictts/config/start.sh:/app/start.sh:ro
-    mem_limit: 3g
-</code></pre>
-
-<p>
-  You can adjust these paths to match your own environment, but the idea is to keep models,
-  outputs, and configuration on the host so you can update voices and collect audio without
-  rebuilding the image. The <code>start.sh</code> file is mapped in as read-only so you can
-  tune runtime parameters (for example, the number of workers or other Piper options) without
-  rebuilding the Docker image itself.
-</p>
-
-<h2>Building and Running the Docker Image</h2>
+<h2>Building the Docker Image</h2>
 
 <p>
   The repository includes a <code>Dockerfile</code> that builds an image containing the Piper
@@ -169,19 +180,44 @@ cd basic-web-tts-fixed
 docker build -t piper-tts-web:latest .</code></pre>
 
 <p>
-  After the image is built, you can use a <code>docker-compose.yml</code> similar to the one
-  shown above to start the container, map your model and output directories, and expose the
-  web interface on a port like <code>8851</code>.
-</p>
-
-<p>
-  A pre-built image on Docker Hub may be provided in the future for an even smoother “docker
-  stack” or <code>docker run</code> experience. If that becomes available, the
+  A pre-built image on Docker Hub may be provided in the future for an even smoother
+  <code>docker run</code> or Docker stack experience. If that becomes available, the
   <a href="https://github.com/steluminary/basic-web-tts-fixed" target="_blank" rel="noopener">
     GitHub repository
   </a>
   will include updated instructions and the Docker Hub image name so you can pull and run
   without building locally.
+</p>
+
+<h2>Example docker-compose.yml</h2>
+
+<p>
+  Once you have a local image (or a future Docker Hub image), you can orchestrate the
+  container with a <code>docker-compose.yml</code> similar to this:
+</p>
+
+<pre><code>version: "3.8"
+services:
+  basictts:
+    image: piper-tts-web:latest
+    container_name: basictts
+    restart: unless-stopped
+    ports:
+      - 8888:8000
+    volumes:
+      - /path/to/basictts/models:/app/src/piper_tts_web/models
+      - /path/to/basictts/outputs:/app/src/piper_tts_web/outputs
+      - /path/to/basictts/config/start.sh:/app/start.sh:ro
+    mem_limit: 3g
+</code></pre>
+
+<p>
+  Adjust <code>/path/to/basictts/models</code>, <code>/path/to/basictts/outputs</code>, and
+  <code>/path/to/basictts/config/start.sh</code> to match your own filesystem layout. The idea
+  is to keep models, outputs, and configuration on the host so you can update voices and
+  collect audio without rebuilding the image. The <code>start.sh</code> file is mapped in as
+  read-only so you can tune runtime parameters (for example, the number of workers or other
+  Piper options) without rebuilding the Docker image itself.
 </p>
 
 <h2>Technology</h2>
