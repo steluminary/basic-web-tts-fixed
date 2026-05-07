@@ -9,11 +9,10 @@
       font-family: system-ui, Arial, sans-serif;
       margin: 24px;
       background: #fafafa;
+      color: #111;
     }
 
-    h1 {
-      margin-bottom: 6px;
-    }
+    h1 { margin-bottom: 6px; }
 
     .sub {
       color: #666;
@@ -21,17 +20,23 @@
       font-size: 14px;
     }
 
-    .voice {
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
       background: white;
       border: 1px solid #ddd;
-      border-radius: 8px;
+      border-radius: 10px;
       padding: 12px;
-      margin-bottom: 10px;
     }
 
     .name {
       font-weight: 600;
       margin-bottom: 6px;
+      font-size: 14px;
     }
 
     audio {
@@ -39,29 +44,18 @@
       margin-top: 6px;
     }
 
-    .meta {
-      font-size: 12px;
-      color: #444;
+    .links {
       margin-top: 6px;
-      line-height: 1.4;
-    }
-
-    .tag {
-      display: inline-block;
-      padding: 2px 6px;
-      font-size: 11px;
-      border-radius: 4px;
-      background: #eee;
-      margin-right: 4px;
-    }
-
-    a {
       font-size: 12px;
+    }
+
+    .links a {
+      margin-right: 10px;
       color: #0366d6;
       text-decoration: none;
     }
 
-    a:hover {
+    .links a:hover {
       text-decoration: underline;
     }
   </style>
@@ -70,9 +64,8 @@
 <body>
 
 <h1>Piper Voice Benchmarks</h1>
-
 <div class="sub">
-  Static benchmark viewer — click play to compare voices. Lower RTF = faster inference.
+  Click play to compare voices. RTF is embedded in filename list (static view).
 </div>
 
 <div id="app">Loading...</div>
