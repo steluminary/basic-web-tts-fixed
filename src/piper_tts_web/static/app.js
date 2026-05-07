@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             ${hasMp3 ? `<a href="${mp3Url}" download="${escapedName}.mp3" class="output-link">Download MP3</a>` : ''}
                             ${hasWav ? `<a href="${wavUrl}" download="${escapedName}.wav" class="output-link">Download WAV</a>` : ''}
 
-                            <button type="button" class="delete-output-button" data-name="${escapedName}">Delete</button>
+                            
                         </div>
                     </div>
                 </div>
@@ -913,48 +913,31 @@ document.addEventListener('DOMContentLoaded', function() {
         convertButton.addEventListener('click', convertToSpeech);
     }
 
-    if (outputsList) {
-        outputsList.addEventListener('click', async function(e) {
-            const loadMp3Button = e.target.closest('.load-mp3-button');
-            if (loadMp3Button) {
-                const url = loadMp3Button.getAttribute('data-url');
-                const downloadName = loadMp3Button.getAttribute('data-download-name') || 'audio.mp3';
-                if (url) {
-                    setMainPlayer(url, downloadName);
-                }
-                return;
-            }
+	if (outputsList) {
+	    outputsList.addEventListener('click', async function(e) {
+	        const loadMp3Button = e.target.closest('.load-mp3-button');
+	        if (loadMp3Button) {
+	            const url = loadMp3Button.getAttribute('data-url');
+	            const downloadName = loadMp3Button.getAttribute('data-download-name') || 'audio.mp3';
+	            if (url) {
+	                setMainPlayer(url, downloadName);
+	            }
+	            return;
+	        }
 
-            const loadWavButton = e.target.closest('.load-wav-button');
-            if (loadWavButton) {
-                const url = loadWavButton.getAttribute('data-url');
-                const downloadName = loadWavButton.getAttribute('data-download-name') || 'audio.wav';
-                if (url) {
-                    setMainPlayer(url, downloadName);
-                }
-                return;
-            }
+	        const loadWavButton = e.target.closest('.load-wav-button');
+	        if (loadWavButton) {
+	            const url = loadWavButton.getAttribute('data-url');
+	            const downloadName = loadWavButton.getAttribute('data-download-name') || 'audio.wav';
+	            if (url) {
+	                setMainPlayer(url, downloadName);
+	            }
+	            return;
+	        }
 
-            const deleteButton = e.target.closest('.delete-output-button');
-            if (!deleteButton) return;
-
-            const name = deleteButton.getAttribute('data-name');
-            if (!name) return;
-
-            if (!window.confirm(`Delete "${name}"?`)) {
-                return;
-            }
-
-            try {
-                await deleteOutputByName(name);
-                await loadOutputs();
-            } catch (error) {
-                console.error('Error deleting output:', error);
-                alert(error.message || 'Failed to delete output.');
-            }
-        });
-    }
-
+	        // no delete-output-button handling anymore
+	    });
+	}
     if (refreshOutputsButton) {
         refreshOutputsButton.addEventListener('click', function() {
             loadOutputs();
